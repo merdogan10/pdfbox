@@ -11,3 +11,12 @@ services:
         volumes:
             - './flask-app:/app'
             - './data:/data'
+    tests:
+        build:
+            context: ./flask-app/tests
+            dockerfile: Dockerfile
+        container_name: tests
+        volumes:
+            - './flask-app:/app'
+            - './data:/data'
+            - './test-data:/test-data'
