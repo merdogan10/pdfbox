@@ -4,6 +4,8 @@ import os
 import pdftotext
 from flask import Flask, request
 from werkzeug.utils import secure_filename
+import concurrent.futures
+import regex
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("FlaskService")
@@ -63,6 +65,56 @@ def upload_file():
         os.chmod(file_path, 0o777)
         pdf_to_text(file_path)
         return {"result": "File uploaded successfully!", "file_name": filename}
+
+
+def search_file(pdf_path, word):
+    txt_path = pdf_path + ".txt"
+    with open(txt_path, "r") as f:
+        txt_reader = f.readlines()
+    text = "".join(txt_reader)
+
+    possible_match_reg = r"(%s){e<=3}" % word
+    if len(word) < 4:
+        possible_match_reg = r"(%s){e<=1}" % word
+    possible_match = regex.findall(
+        possible_match_reg, text, flags=regex.IGNORECASE | regex.BESTMATCH
+    )
+    exact_match = regex.findall(
+        r"%s" % word, text, flags=regex.IGNORECASE | regex.BESTMATCH
+    )
+    return [len(exact_match), len(possible_match), pdf_path]
+
+
+@app.route("/search", methods=["POST"])
+def search_documents():
+    if request.method == "POST":
+        word = request.form.get("word")
+
+        all_files = list_files()["files"]
+        futures = []
+        with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+            for filename in all_files:
+                doc = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+                future = executor.submit(search_file, doc, word)
+                futures.append(future)
+
+        matches = []
+        for future in concurrent.futures.as_completed(futures):
+            exact, possible, doc = future.result()
+            matches.append([exact, possible, doc])
+
+        matches.sort(key=lambda x: (-x[0], -x[1]))
+        return {
+            "word": word,
+            "result": [
+                {
+                    "file_name": match[2],
+                    "exact_match": match[0],
+                    "possible_match": match[1],
+                }
+                for match in matches[:3]
+            ],
+        }
 
 
 if __name__ == "__main__":
