@@ -1,0 +1,4 @@
+flask==2.0.1
+pdftotext==2.1.6
+regex==2021.8.3
+pytest==6.2.4

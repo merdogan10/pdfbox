@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+    box:
+        build:
+            context: ./flask-app
+            dockerfile: Dockerfile
+        ports:
+            - '8080:8080'
+        container_name: box
+        volumes:
+            - './flask-app:/app'
+            - './data:/data'
