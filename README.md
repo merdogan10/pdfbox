@@ -51,6 +51,15 @@ Postman:
 
 ![test](docs_images/test.png "Postman test")
 
+#### Success response
+Code: `200`
+
+```json
+{
+    "status": "running"
+}
+```
+
 ### upload
 `PUT /upload`. Used to upload pdf files.
 
@@ -77,7 +86,7 @@ Code: `200`
 }
 ```
 
-#### Fail responss
+#### Fail responses
 When the file is not put in the request:
 
 Code: `400`
